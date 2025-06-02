@@ -20,7 +20,11 @@ jobs:
     - name: Install ImageMagick
       run: |
         sudo apt-get update
-        sudo apt-get install -y imagemagick
+        sudo apt-get install -y imagemagick webp
+        # Check ImageMagick version and available commands
+        identify -version
+        which convert || echo "convert not found"
+        which magick || echo "magick not found"
         # ImageMagick policy adjustment for security
         sudo sed -i 's/rights="none" pattern="PNG"/rights="read|write" pattern="PNG"/' /etc/ImageMagick-6/policy.xml || true
         sudo sed -i 's/rights="none" pattern="WEBP"/rights="read|write" pattern="WEBP"/' /etc/ImageMagick-6/policy.xml || true
@@ -59,14 +63,30 @@ jobs:
               
               # Skip if files already exist
               if [ ! -f "images/webp/$webp_file" ]; then
-                # Convert to WebP (quality 85%) - use convert command
-                convert "$file" -quality 85 "images/webp/$webp_file"
+                # Convert to WebP (quality 85%) - try multiple commands
+                if command -v magick >/dev/null 2>&1; then
+                  magick "$file" -quality 85 "images/webp/$webp_file"
+                elif command -v convert >/dev/null 2>&1; then
+                  convert "$file" -quality 85 "images/webp/$webp_file"
+                elif command -v cwebp >/dev/null 2>&1; then
+                  cwebp -q 85 "$file" -o "images/webp/$webp_file"
+                else
+                  echo "Error: No WebP conversion tool found"
+                  exit 1
+                fi
                 echo "Created WebP: images/webp/$webp_file"
               fi
               
               if [ ! -f "images/thumbnails/$thumbnail_file" ]; then
-                # Create thumbnail (300x200, maintain aspect ratio) - use convert command
-                convert "$file" -resize 300x200^ -gravity center -extent 300x200 -quality 85 "images/thumbnails/$thumbnail_file"
+                # Create thumbnail (300x200, maintain aspect ratio)
+                if command -v magick >/dev/null 2>&1; then
+                  magick "$file" -resize 300x200^ -gravity center -extent 300x200 -quality 85 "images/thumbnails/$thumbnail_file"
+                elif command -v convert >/dev/null 2>&1; then
+                  convert "$file" -resize 300x200^ -gravity center -extent 300x200 -quality 85 "images/thumbnails/$thumbnail_file"
+                else
+                  echo "Error: No image processing tool found"
+                  exit 1
+                fi
                 echo "Created thumbnail: images/thumbnails/$thumbnail_file"
               fi
               
