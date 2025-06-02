@@ -30,16 +30,13 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y imagemagick
-        
-        # ImageMagick権限設定
         sudo sed -i 's/rights="none"/rights="read|write"/g' /etc/ImageMagick-6/policy.xml
-        
         echo "ImageMagick installed:"
         convert -version
 
     - name: Create required directories
       run: |
-        mkdir -p images/{webp,thumbnails} _posts
+        mkdir -p images/webp images/thumbnails _posts
         echo "Created directories:"
         ls -la images/
         ls -la _posts/ || echo "_posts created"
@@ -47,56 +44,48 @@ jobs:
     - name: Process PNG images
       run: |
         echo "=== Looking for PNG files in images/original/ ==="
-        
         if ls images/original/*.png 1> /dev/null 2>&1; then
           echo "Found PNG files, processing..."
-          
           for file in images/original/*.png; do
             echo "Processing: $file"
             basename=$(basename "$file" .png)
-            
-            # VRChat形式チェック
             if [[ $basename =~ VRChat_([0-9]{4}-[0-9]{2}-[0-9]{2})_([0-9]{2}-[0-9]{2}-[0-9]{2})\.([0-9]{3})_([0-9]+)x([0-9]+) ]]; then
               date_part="${BASH_REMATCH[1]}"
               time_part="${BASH_REMATCH[2]}"
-              
-              # ファイル名定義
               webp_file="${basename}.webp"
               thumbnail_file="${basename}_thumb.webp" 
               post_file="_posts/${date_part}-${basename}.md"
-              
               echo "  → WebP: $webp_file"
               echo "  → Thumbnail: $thumbnail_file"
               echo "  → Post: $post_file"
-              
-              # WebP変換
               if [ ! -f "images/webp/$webp_file" ]; then
                 convert "$file" -quality 85 "images/webp/$webp_file"
                 echo "  ✓ WebP created"
               fi
-              
-              # サムネイル作成
               if [ ! -f "images/thumbnails/$thumbnail_file" ]; then
                 convert "$file" -resize 300x200^ -gravity center -extent 300x200 -quality 85 "images/thumbnails/$thumbnail_file"
                 echo "  ✓ Thumbnail created"
               fi
-              
-              # Markdownポスト作成
               if [ ! -f "$post_file" ]; then
-                cat > "$post_file" << EOF
----
-layout: default
-title: "$basename"
-date: "${date_part} ${time_part//-/:}"
-webp_file: "$webp_file"
-thumbnail: "$thumbnail_file"
-world_name: ""
-description: ""
-tags: []
----
-
-<!-- ここに詳細を記入 -->
-EOF
+                cat > "$post_file" << 'EOF'
+        ---
+        layout: default
+        title: "$basename"
+        date: "$date_part $time_part"
+        webp_file: "$webp_file"
+        thumbnail: "$thumbnail_file"
+        world_name: ""
+        description: ""
+        tags: []
+        ---
+        
+        <!-- ここに詳細を記入 -->
+        EOF
+                sed -i "s/\$basename/$basename/g" "$post_file"
+                sed -i "s/\$date_part/$date_part/g" "$post_file"
+                sed -i "s/\$time_part/${time_part//-/:}/g" "$post_file"
+                sed -i "s/\$webp_file/$webp_file/g" "$post_file"
+                sed -i "s/\$thumbnail_file/$thumbnail_file/g" "$post_file"
                 echo "  ✓ Post created"
               fi
             else
@@ -110,7 +99,6 @@ EOF
     - name: Commit and push changes
       run: |
         git add .
-        
         if git diff --staged --quiet; then
           echo "No changes to commit"
         else
