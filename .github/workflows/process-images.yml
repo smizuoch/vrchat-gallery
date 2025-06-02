@@ -3,10 +3,9 @@ name: Process VRChat Screenshots
 on:
   push:
     paths:
-      - 'images/original/**/*.png'
+      - 'images/original/**'
   workflow_dispatch:
 
-# GitHub Actionsの権限設定を追加
 permissions:
   contents: write
   actions: read
@@ -26,194 +25,96 @@ jobs:
       run: |
         git config --global user.email "action@github.com"
         git config --global user.name "GitHub Action"
-        git config --global init.defaultBranch main
 
-    - name: Install ImageMagick and WebP tools
+    - name: Install ImageMagick
       run: |
         sudo apt-get update
-        sudo apt-get install -y imagemagick webp
+        sudo apt-get install -y imagemagick
         
         # ImageMagick権限設定
-        sudo cp /etc/ImageMagick-6/policy.xml /etc/ImageMagick-6/policy.xml.backup
         sudo sed -i 's/rights="none"/rights="read|write"/g' /etc/ImageMagick-6/policy.xml
         
-        # インストール確認
-        echo "=== Installed tools ==="
-        identify -version
-        cwebp -version || echo "cwebp not available"
-        which convert
-        which magick
+        echo "ImageMagick installed:"
+        convert -version
 
-    - name: Check for new images
-      id: check-images
+    - name: Create required directories
       run: |
-        echo "=== Checking for PNG files ==="
-        if ls images/original/*.png 1> /dev/null 2>&1; then
-          echo "found=true" >> $GITHUB_OUTPUT
-          echo "Found PNG files:"
-          ls -la images/original/*.png
-        else
-          echo "found=false" >> $GITHUB_OUTPUT
-          echo "No PNG files found in images/original/"
-        fi
-
-    - name: Process new images
-      if: steps.check-images.outputs.found == 'true'
-      run: |
-        echo "=== Starting image processing ==="
-        
-        # ディレクトリ作成
-        mkdir -p images/webp images/thumbnails _posts
-        
-        # 現在のディレクトリ構造を確認
-        echo "=== Directory structure ==="
+        mkdir -p images/{webp,thumbnails} _posts
+        echo "Created directories:"
         ls -la images/
+        ls -la _posts/ || echo "_posts created"
+
+    - name: Process PNG images
+      run: |
+        echo "=== Looking for PNG files in images/original/ ==="
         
-        # 処理カウンター
-        processed_count=0
-        
-        for file in images/original/*.png; do
-          if [ -f "$file" ]; then
-            echo "=== Processing: $file ==="
-            
+        if ls images/original/*.png 1> /dev/null 2>&1; then
+          echo "Found PNG files, processing..."
+          
+          for file in images/original/*.png; do
+            echo "Processing: $file"
             basename=$(basename "$file" .png)
-            echo "Basename: $basename"
             
-            # VRChatファイル名パターンの正規表現チェック
+            # VRChat形式チェック
             if [[ $basename =~ VRChat_([0-9]{4}-[0-9]{2}-[0-9]{2})_([0-9]{2}-[0-9]{2}-[0-9]{2})\.([0-9]{3})_([0-9]+)x([0-9]+) ]]; then
               date_part="${BASH_REMATCH[1]}"
               time_part="${BASH_REMATCH[2]}"
-              millisec="${BASH_REMATCH[3]}"
-              width="${BASH_REMATCH[4]}"
-              height="${BASH_REMATCH[5]}"
               
-              echo "Parsed - Date: $date_part, Time: $time_part, Resolution: ${width}x${height}"
-              
-              formatted_time="${time_part//-/:}"
-              full_datetime="${date_part} ${formatted_time}"
-              
+              # ファイル名定義
               webp_file="${basename}.webp"
-              thumbnail_file="${basename}_300x200.webp"
+              thumbnail_file="${basename}_thumb.webp" 
               post_file="_posts/${date_part}-${basename}.md"
               
-              echo "Output files - WebP: $webp_file, Thumbnail: $thumbnail_file, Post: $post_file"
+              echo "  → WebP: $webp_file"
+              echo "  → Thumbnail: $thumbnail_file"
+              echo "  → Post: $post_file"
               
               # WebP変換
               if [ ! -f "images/webp/$webp_file" ]; then
-                echo "Converting to WebP..."
-                if convert "$file" -quality 85 "images/webp/$webp_file"; then
-                  echo "✓ WebP conversion successful"
-                  ls -la "images/webp/$webp_file"
-                else
-                  echo "✗ WebP conversion failed"
-                  continue
-                fi
-              else
-                echo "WebP already exists"
+                convert "$file" -quality 85 "images/webp/$webp_file"
+                echo "  ✓ WebP created"
               fi
               
               # サムネイル作成
               if [ ! -f "images/thumbnails/$thumbnail_file" ]; then
-                echo "Creating thumbnail..."
-                if convert "$file" -resize 300x200^ -gravity center -extent 300x200 -quality 85 "images/thumbnails/$thumbnail_file"; then
-                  echo "✓ Thumbnail creation successful"
-                  ls -la "images/thumbnails/$thumbnail_file"
-                else
-                  echo "✗ Thumbnail creation failed"
-                  continue
-                fi
-              else
-                echo "Thumbnail already exists"
+                convert "$file" -resize 300x200^ -gravity center -extent 300x200 -quality 85 "images/thumbnails/$thumbnail_file"
+                echo "  ✓ Thumbnail created"
               fi
-              
-              # ファイルサイズ取得
-              file_size=$(du -h "$file" | cut -f1)
-              echo "File size: $file_size"
               
               # Markdownポスト作成
               if [ ! -f "$post_file" ]; then
-                echo "Creating markdown post..."
                 cat > "$post_file" << EOF
 ---
-layout: photo
+layout: default
 title: "$basename"
-date: "$full_datetime"
-original_file: "$(basename "$file")"
+date: "${date_part} ${time_part//-/:}"
 webp_file: "$webp_file"
 thumbnail: "$thumbnail_file"
-resolution: "${width}x${height}"
-file_size: "$file_size"
-
-# ユーザー編集エリア（以下を手動で編集してください）
 world_name: ""
-event_name: ""
-avatars: []
-tags: []
 description: ""
-photographer: "smizuoch"
+tags: []
 ---
 
-<!-- この下に詳細説明を追記できます -->
+<!-- ここに詳細を記入 -->
 EOF
-                echo "✓ Markdown post created"
-                ls -la "$post_file"
-              else
-                echo "Markdown post already exists"
+                echo "  ✓ Post created"
               fi
-              
-              processed_count=$((processed_count + 1))
-              
             else
-              echo "✗ Warning: File $basename does not match VRChat pattern"
+              echo "  ✗ Not VRChat format: $basename"
             fi
-            
-            echo "=== Finished processing $file ==="
-            echo ""
-          fi
-        done
-        
-        echo "=== Processing complete. Files processed: $processed_count ==="
-        
-        # 最終的なディレクトリ構造確認
-        echo "=== Final directory structure ==="
-        echo "WebP files:"
-        ls -la images/webp/ || echo "No webp directory"
-        echo "Thumbnail files:"
-        ls -la images/thumbnails/ || echo "No thumbnails directory"
-        echo "Post files:"
-        ls -la _posts/ || echo "No posts directory"
-
-    - name: Check for changes and commit
-      run: |
-        echo "=== Checking for changes ==="
-        
-        # Git状態確認
-        git status
-        
-        # 変更があるかチェック
-        if git diff --quiet && git diff --staged --quiet; then
-          echo "No changes detected"
-          exit 0
+          done
+        else
+          echo "No PNG files found in images/original/"
         fi
-        
-        echo "Changes detected. Adding files..."
-        git add images/webp/ images/thumbnails/ _posts/
-        
-        # ステージされた変更を確認
-        echo "=== Staged changes ==="
-        git diff --staged --name-only
+
+    - name: Commit and push changes
+      run: |
+        git add .
         
         if git diff --staged --quiet; then
-          echo "No staged changes to commit"
+          echo "No changes to commit"
         else
-          echo "Committing changes..."
-          git commit -m "Auto-process VRChat screenshots: WebP conversion and metadata generation [$(date)]"
-          
-          echo "Pushing to repository..."
-          if git push; then
-            echo "✓ Successfully pushed changes"
-          else
-            echo "✗ Failed to push changes"
-            exit 1
-          fi
+          git commit -m "Process VRChat screenshots [$(date)]"
+          git push
+          echo "Changes pushed successfully"
         fi

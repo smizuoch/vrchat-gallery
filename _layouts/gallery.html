@@ -2,276 +2,78 @@
 layout: default
 ---
 
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ page.title | default: site.title }}</title>
-    <meta name="description" content="{{ page.description | default: site.description }}">
-    
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Lightbox CSS -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/css/lightbox.min.css" rel="stylesheet">
-    
-    <style>
-        :root {
-            --vrchat-blue: #1778f2;
-            --vrchat-dark: #141414;
-        }
-        
-        .navbar-brand {
-            color: var(--vrchat-blue) !important;
-            font-weight: bold;
-        }
-        
-        .gallery-item {
-            margin-bottom: 2rem;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-        }
-        
-        .gallery-item:hover {
-            transform: translateY(-2px);
-        }
-        
-        .gallery-item img {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-        }
-        
-        .search-filters {
-            background: #f8f9fa;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 2rem;
-        }
-        
-        .stats-card {
-            background: linear-gradient(135deg, var(--vrchat-blue), #0d6efd);
-            color: white;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-        }
-    </style>
-</head>
-<body>
-    <!-- ナビゲーション -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="{{ '/' | relative_url }}">🎮 {{ site.title }}</a>
-        </div>
-    </nav>
-
-    <!-- メインコンテンツ -->
-    <div class="container mt-4">
-        <!-- 統計情報 -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="stats-card">
+<div class="container mt-4">
+    <!-- 統計情報 -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
                     <h5>📸 総スクリーンショット数</h5>
-                    <h3 id="total-photos">{{ site.posts | size }}</h3>
+                    <h3>{{ site.posts | size }}</h3>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="stats-card">
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
                     <h5>🌍 訪問ワールド数</h5>
                     <h3 id="total-worlds">-</h3>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="stats-card">
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
                     <h5>🏷️ ユニークタグ数</h5>
                     <h3 id="total-tags">-</h3>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="stats-card">
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
                     <h5>📅 最新撮影日</h5>
                     <h3 id="latest-date">-</h3>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- 検索・フィルター -->
-        <div class="search-filters">
-            <div class="row">
-                <div class="col-md-4">
-                    <input type="text" class="form-control" id="search-input" placeholder="🔍 キーワード検索...">
-                </div>
-                <div class="col-md-2">
-                    <select class="form-select" id="world-filter">
-                        <option value="">すべてのワールド</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <select class="form-select" id="tag-filter">
-                        <option value="">すべてのタグ</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <input type="date" class="form-control" id="date-filter">
-                </div>
-                <div class="col-md-2">
-                    <button class="btn btn-secondary w-100" onclick="clearFilters()">クリア</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ギャラリーグリッド -->
-        <div class="row" id="gallery-grid">
+    <!-- ギャラリーグリッド -->
+    <div class="row" id="gallery-grid">
+        {% if site.posts.size > 0 %}
             {% assign posts = site.posts | sort: 'date' | reverse %}
             {% for post in posts %}
-            <div class="col-md-4 gallery-item-wrapper" 
-                 data-world="{{ post.world_name | default: '' }}" 
-                 data-tags="{{ post.tags | join: ',' }}"
-                 data-date="{{ post.date | date: '%Y-%m-%d' }}"
-                 data-search="{{ post.title }} {{ post.description }} {{ post.world_name }} {{ post.tags | join: ' ' }}">
-                
-                <div class="gallery-item">
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    {% if post.thumbnail %}
                     <a href="{{ '/images/webp/' | append: post.webp_file | relative_url }}" 
                        data-lightbox="gallery" 
-                       data-title="{{ post.title }} - {{ post.description }}">
+                       data-title="{{ post.title }}">
                         <img src="{{ '/images/thumbnails/' | append: post.thumbnail | relative_url }}" 
+                             class="card-img-top" 
                              alt="{{ post.title }}"
-                             loading="lazy">
+                             style="height: 200px; object-fit: cover;">
                     </a>
+                    {% endif %}
                     
-                    <div class="p-3">
-                        <h6 class="mb-1">{{ post.world_name | default: "Unknown World" }}</h6>
+                    <div class="card-body">
+                        <h6 class="card-title">{{ post.world_name | default: "Unknown World" }}</h6>
                         <small class="text-muted">{{ post.date | date: "%Y年%m月%d日 %H:%M" }}</small>
                         
-                        {% if post.tags.size > 0 %}
-                        <div class="mt-2">
-                            {% for tag in post.tags %}
-                            <span class="badge bg-primary me-1">{{ tag }}</span>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                        
                         {% if post.description %}
-                        <p class="mt-2 mb-0 small">{{ post.description }}</p>
+                        <p class="card-text small">{{ post.description }}</p>
                         {% endif %}
                     </div>
                 </div>
             </div>
             {% endfor %}
-        </div>
-
-        <!-- 画像がない場合の表示 -->
-        <div id="no-images" class="text-center py-5" style="display: none;">
-            <h3>📷 まだスクリーンショットがありません</h3>
-            <p class="text-muted">images/original/ フォルダにVRChatのスクリーンショット（PNG形式）をアップロードしてください。</p>
-        </div>
+        {% else %}
+            <div class="col-12 text-center py-5">
+                <h3>📷 まだスクリーンショットがありません</h3>
+                <p class="text-muted">images/original/ フォルダにVRChatのスクリーンショット（PNG形式）をアップロードしてください。</p>
+                <p class="text-muted">ファイル名例: VRChat_2025-01-15_14-30-25.123_1920x1080.png</p>
+            </div>
+        {% endif %}
     </div>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Lightbox JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/js/lightbox.min.js"></script>
-    
-    <script>
-        // フィルタリング機能
-        function filterGallery() {
-            const searchTerm = document.getElementById('search-input').value.toLowerCase();
-            const worldFilter = document.getElementById('world-filter').value;
-            const tagFilter = document.getElementById('tag-filter').value;
-            const dateFilter = document.getElementById('date-filter').value;
-            
-            const items = document.querySelectorAll('.gallery-item-wrapper');
-            let visibleCount = 0;
-            
-            items.forEach(item => {
-                const searchText = item.dataset.search.toLowerCase();
-                const world = item.dataset.world;
-                const tags = item.dataset.tags;
-                const date = item.dataset.date;
-                
-                const matchesSearch = !searchTerm || searchText.includes(searchTerm);
-                const matchesWorld = !worldFilter || world === worldFilter;
-                const matchesTag = !tagFilter || tags.includes(tagFilter);
-                const matchesDate = !dateFilter || date === dateFilter;
-                
-                if (matchesSearch && matchesWorld && matchesTag && matchesDate) {
-                    item.style.display = 'block';
-                    visibleCount++;
-                } else {
-                    item.style.display = 'none';
-                }
-            });
-            
-            document.getElementById('no-images').style.display = visibleCount === 0 ? 'block' : 'none';
-        }
-        
-        function clearFilters() {
-            document.getElementById('search-input').value = '';
-            document.getElementById('world-filter').value = '';
-            document.getElementById('tag-filter').value = '';
-            document.getElementById('date-filter').value = '';
-            filterGallery();
-        }
-        
-        // イベントリスナー
-        document.getElementById('search-input').addEventListener('input', filterGallery);
-        document.getElementById('world-filter').addEventListener('change', filterGallery);
-        document.getElementById('tag-filter').addEventListener('change', filterGallery);
-        document.getElementById('date-filter').addEventListener('change', filterGallery);
-        
-        // 初期化
-        document.addEventListener('DOMContentLoaded', function() {
-            // フィルターオプションを動的に生成
-            const items = document.querySelectorAll('.gallery-item-wrapper');
-            const worlds = new Set();
-            const tags = new Set();
-            
-            items.forEach(item => {
-                if (item.dataset.world) worlds.add(item.dataset.world);
-                if (item.dataset.tags) {
-                    item.dataset.tags.split(',').forEach(tag => {
-                        if (tag.trim()) tags.add(tag.trim());
-                    });
-                }
-            });
-            
-            // ワールドフィルター
-            const worldSelect = document.getElementById('world-filter');
-            Array.from(worlds).sort().forEach(world => {
-                const option = document.createElement('option');
-                option.value = world;
-                option.textContent = world;
-                worldSelect.appendChild(option);
-            });
-            
-            // タグフィルター
-            const tagSelect = document.getElementById('tag-filter');
-            Array.from(tags).sort().forEach(tag => {
-                const option = document.createElement('option');
-                option.value = tag;
-                option.textContent = tag;
-                tagSelect.appendChild(option);
-            });
-            
-            // 統計更新
-            document.getElementById('total-worlds').textContent = worlds.size;
-            document.getElementById('total-tags').textContent = tags.size;
-            
-            // 最新日付
-            const dates = Array.from(items).map(item => item.dataset.date).filter(date => date);
-            if (dates.length > 0) {
-                const latestDate = dates.sort().reverse()[0];
-                document.getElementById('latest-date').textContent = latestDate;
-            }
-            
-            // 画像がない場合の表示
-            if (items.length === 0) {
-                document.getElementById('no-images').style.display = 'block';
-            }
-        });
-    </script>
-</body>
-</html>
+</div>
