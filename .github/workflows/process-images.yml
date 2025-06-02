@@ -21,6 +21,11 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y imagemagick
+        # ImageMagick policy adjustment for security
+        sudo sed -i 's/rights="none" pattern="PNG"/rights="read|write" pattern="PNG"/' /etc/ImageMagick-6/policy.xml || true
+        sudo sed -i 's/rights="none" pattern="WEBP"/rights="read|write" pattern="WEBP"/' /etc/ImageMagick-6/policy.xml || true
+        sudo sed -i 's/rights="none" pattern="JPG"/rights="read|write" pattern="JPG"/' /etc/ImageMagick-6/policy.xml || true
+        sudo sed -i 's/rights="none" pattern="JPEG"/rights="read|write" pattern="JPEG"/' /etc/ImageMagick-6/policy.xml || true
 
     - name: Process new images
       run: |
@@ -54,14 +59,14 @@ jobs:
               
               # Skip if files already exist
               if [ ! -f "images/webp/$webp_file" ]; then
-                # Convert to WebP (quality 85%)
-                magick "$file" -quality 85 "images/webp/$webp_file"
+                # Convert to WebP (quality 85%) - use convert command
+                convert "$file" -quality 85 "images/webp/$webp_file"
                 echo "Created WebP: images/webp/$webp_file"
               fi
               
               if [ ! -f "images/thumbnails/$thumbnail_file" ]; then
-                # Create thumbnail (300x200, maintain aspect ratio)
-                magick "$file" -resize 300x200^ -gravity center -extent 300x200 -quality 85 "images/thumbnails/$thumbnail_file"
+                # Create thumbnail (300x200, maintain aspect ratio) - use convert command
+                convert "$file" -resize 300x200^ -gravity center -extent 300x200 -quality 85 "images/thumbnails/$thumbnail_file"
                 echo "Created thumbnail: images/thumbnails/$thumbnail_file"
               fi
               
@@ -71,27 +76,27 @@ jobs:
               # Create markdown post if it doesn't exist
               if [ ! -f "$post_file" ]; then
                 cat > "$post_file" << EOF
-        ---
-        layout: photo
-        title: "$basename"
-        date: "$full_datetime"
-        original_file: "$(basename "$file")"
-        webp_file: "$webp_file"
-        thumbnail: "$thumbnail_file"
-        resolution: "${width}x${height}"
-        file_size: "$file_size"
-        
-        # ユーザー編集エリア（以下を手動で編集してください）
-        world_name: ""
-        event_name: ""
-        avatars: []
-        tags: []
-        description: ""
-        photographer: "smizuoch"
-        ---
+---
+layout: photo
+title: "$basename"
+date: "$full_datetime"
+original_file: "$(basename "$file")"
+webp_file: "$webp_file"
+thumbnail: "$thumbnail_file"
+resolution: "${width}x${height}"
+file_size: "$file_size"
 
-        <!-- この下に詳細説明を追記できます -->
-        EOF
+# ユーザー編集エリア（以下を手動で編集してください）
+world_name: ""
+event_name: ""
+avatars: []
+tags: []
+description: ""
+photographer: "smizuoch"
+---
+
+<!-- この下に詳細説明を追記できます -->
+EOF
                 echo "Created post: $post_file"
               fi
             else
