@@ -1,0 +1,114 @@
+name: Process VRChat Screenshots
+
+on:
+  push:
+    paths:
+      - 'images/original/**/*.png'
+  workflow_dispatch:
+
+jobs:
+  process-images:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+
+    - name: Install ImageMagick
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y imagemagick
+
+    - name: Process new images
+      run: |
+        # Create directories if they don't exist
+        mkdir -p images/webp images/thumbnails _posts
+        
+        # Process each PNG file in original directory
+        for file in images/original/*.png; do
+          if [ -f "$file" ]; then
+            echo "Processing: $file"
+            
+            # Extract filename without path and extension
+            basename=$(basename "$file" .png)
+            
+            # Extract metadata using regex
+            if [[ $basename =~ VRChat_([0-9]{4}-[0-9]{2}-[0-9]{2})_([0-9]{2}-[0-9]{2}-[0-9]{2})\.([0-9]{3})_([0-9]+)x([0-9]+) ]]; then
+              date_part="${BASH_REMATCH[1]}"
+              time_part="${BASH_REMATCH[2]}"
+              millisec="${BASH_REMATCH[3]}"
+              width="${BASH_REMATCH[4]}"
+              height="${BASH_REMATCH[5]}"
+              
+              # Convert time format
+              formatted_time="${time_part//-/:}"
+              full_datetime="${date_part} ${formatted_time}"
+              
+              # File paths
+              webp_file="${basename}.webp"
+              thumbnail_file="${basename}_300x200.webp"
+              post_file="_posts/${date_part}-${basename}.md"
+              
+              # Skip if files already exist
+              if [ ! -f "images/webp/$webp_file" ]; then
+                # Convert to WebP (quality 85%)
+                magick "$file" -quality 85 "images/webp/$webp_file"
+                echo "Created WebP: images/webp/$webp_file"
+              fi
+              
+              if [ ! -f "images/thumbnails/$thumbnail_file" ]; then
+                # Create thumbnail (300x200, maintain aspect ratio)
+                magick "$file" -resize 300x200^ -gravity center -extent 300x200 -quality 85 "images/thumbnails/$thumbnail_file"
+                echo "Created thumbnail: images/thumbnails/$thumbnail_file"
+              fi
+              
+              # Get file size
+              file_size=$(du -h "$file" | cut -f1)
+              
+              # Create markdown post if it doesn't exist
+              if [ ! -f "$post_file" ]; then
+                cat > "$post_file" << EOF
+        ---
+        layout: photo
+        title: "$basename"
+        date: "$full_datetime"
+        original_file: "$(basename "$file")"
+        webp_file: "$webp_file"
+        thumbnail: "$thumbnail_file"
+        resolution: "${width}x${height}"
+        file_size: "$file_size"
+        
+        # ユーザー編集エリア（以下を手動で編集してください）
+        world_name: ""
+        event_name: ""
+        avatars: []
+        tags: []
+        description: ""
+        photographer: "smizuoch"
+        ---
+
+        <!-- この下に詳細説明を追記できます -->
+        EOF
+                echo "Created post: $post_file"
+              fi
+            else
+              echo "Warning: File $basename does not match expected pattern"
+            fi
+          fi
+        done
+
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add images/webp/ images/thumbnails/ _posts/
+        
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "Auto-process VRChat screenshots: WebP conversion and metadata generation"
+          git push
+        fi

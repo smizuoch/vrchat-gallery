@@ -1,0 +1,128 @@
+---
+layout: default
+---
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- 画像表示 -->
+            <div class="card">
+                <div class="card-body text-center">
+                    <a href="{{ '/images/webp/' | append: page.webp_file | prepend: site.baseurl }}" 
+                       data-lightbox="photo" 
+                       data-title="{{ page.title }}">
+                        <img src="{{ '/images/webp/' | append: page.webp_file | prepend: site.baseurl }}" 
+                             alt="{{ page.title }}" 
+                             class="img-fluid rounded">
+                    </a>
+                </div>
+            </div>
+            
+            <!-- 説明文 -->
+            {% if page.description != "" %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5><i class="fas fa-comment"></i> 説明</h5>
+                </div>
+                <div class="card-body">
+                    <p>{{ page.description }}</p>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- 追加コンテンツ -->
+            {% if content != "" %}
+            <div class="card mt-3">
+                <div class="card-body">
+                    {{ content }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- メタデータ -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle"></i> 画像情報</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">撮影日時:</dt>
+                        <dd class="col-sm-8">{{ page.date | date: "%Y年%m月%d日 %H:%M" }}</dd>
+                        
+                        <dt class="col-sm-4">解像度:</dt>
+                        <dd class="col-sm-8">{{ page.resolution }}</dd>
+                        
+                        <dt class="col-sm-4">ファイルサイズ:</dt>
+                        <dd class="col-sm-8">{{ page.file_size }}</dd>
+                        
+                        <dt class="col-sm-4">撮影者:</dt>
+                        <dd class="col-sm-8">{{ page.photographer }}</dd>
+                        
+                        {% if page.world_name != "" %}
+                        <dt class="col-sm-4">ワールド:</dt>
+                        <dd class="col-sm-8">{{ page.world_name }}</dd>
+                        {% endif %}
+                        
+                        {% if page.event_name != "" %}
+                        <dt class="col-sm-4">イベント:</dt>
+                        <dd class="col-sm-8">{{ page.event_name }}</dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+            
+            <!-- アバター情報 -->
+            {% if page.avatars.size > 0 %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5><i class="fas fa-users"></i> アバター</h5>
+                </div>
+                <div class="card-body">
+                    {% for avatar in page.avatars %}
+                    <span class="badge bg-primary me-1">{{ avatar }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- タグ -->
+            {% if page.tags.size > 0 %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5><i class="fas fa-tags"></i> タグ</h5>
+                </div>
+                <div class="card-body">
+                    {% for tag in page.tags %}
+                    <span class="badge bg-secondary me-1">#{{ tag }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- ナビゲーション -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ '/' | prepend: site.baseurl }}" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left"></i> ギャラリーに戻る
+                        </a>
+                        
+                        {% if page.previous %}
+                        <a href="{{ page.previous.url | prepend: site.baseurl }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-chevron-left"></i> 前の画像
+                        </a>
+                        {% endif %}
+                        
+                        {% if page.next %}
+                        <a href="{{ page.next.url | prepend: site.baseurl }}" class="btn btn-outline-secondary">
+                            次の画像 <i class="fas fa-chevron-right"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,56 @@
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title"><i class="fas fa-search"></i> 検索・フィルター</h5>
+        
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label for="search-input" class="form-label">キーワード検索</label>
+                <input type="text" 
+                       class="form-control" 
+                       id="search-input" 
+                       placeholder="ワールド名、タグ、説明文で検索...">
+            </div>
+            
+            <div class="col-md-3">
+                <label for="date-filter" class="form-label">日付フィルター</label>
+                <input type="date" 
+                       class="form-control" 
+                       id="date-filter">
+            </div>
+            
+            <div class="col-md-3">
+                <label for="tag-filter" class="form-label">タグフィルター</label>
+                <select class="form-select" id="tag-filter">
+                    <option value="">すべてのタグ</option>
+                    {% assign all_tags = site.posts | map: 'tags' | join: ',' | split: ',' | uniq | sort %}
+                    {% for tag in all_tags %}
+                    {% if tag != "" %}
+                    <option value="{{ tag }}">{{ tag }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        
+        <div class="row g-3 mt-2">
+            <div class="col-md-6">
+                <label for="world-filter" class="form-label">ワールドフィルター</label>
+                <select class="form-select" id="world-filter">
+                    <option value="">すべてのワールド</option>
+                    {% assign all_worlds = site.posts | map: 'world_name' | uniq | sort %}
+                    {% for world in all_worlds %}
+                    {% if world != "" %}
+                    <option value="{{ world }}">{{ world }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-6 d-flex align-items-end">
+                <button class="btn btn-outline-secondary" id="clear-filters">
+                    <i class="fas fa-times"></i> フィルターをクリア
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

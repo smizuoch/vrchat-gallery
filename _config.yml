@@ -1,0 +1,45 @@
+title: "smizuoch's VRChat Gallery"
+description: "VRChat screenshots collection with auto WebP conversion"
+baseurl: "/vrchat-gallery"
+url: "https://smizuoch.github.io"
+author: "smizuoch"
+
+# Jekyll設定
+markdown: kramdown
+highlighter: rouge
+permalink: /photos/:year/:month/:day/:title/
+timezone: Asia/Tokyo
+
+# GitHub Pages設定
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
+
+# コレクション設定
+collections:
+  posts:
+    output: true
+    permalink: /photos/:year/:month/:day/:title/
+
+# サイト設定
+paginate: 12
+paginate_path: "/page:num/"
+
+# 除外ファイル
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
+  - images/original
+
+# デフォルト設定
+defaults:
+  - scope:
+      path: "_posts"
+      type: "posts"
+    values:
+      layout: "photo"
+      photographer: "smizuoch"
